@@ -25,10 +25,18 @@ func (rpc *RPCMap) RegisterGateway(ctx context.Context, req *mapper.GatewayPutRe
 		region = "global"
 	}
 
-	data := rpc.MemStore.AddGateway(
+	data, err := rpc.MemStore.AddGateway(
 		region,
 		gatewayData,
 	)
+	if err != nil {
+		return &mapper.GatewayResponse{
+			Error: &mapper.Error{
+				Code:    1,
+				Message: err.Error(),
+			},
+		}, nil
+	}
 	return &mapper.GatewayResponse{
 		GatewayId:     data.GatewayID,
 		GatewayDomain: data.GatewayDomain,

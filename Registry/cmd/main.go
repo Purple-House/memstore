@@ -8,9 +8,12 @@ import (
 	"os/signal"
 	"syscall"
 
+	"runtime/debug"
+
 	"github.com/Purple-House/memstore/registry/pkg/maps"
 	memstore "github.com/Purple-House/memstore/registry/pkg/memstore"
 	mapper "github.com/Purple-House/memstore/registry/proto"
+	grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )
@@ -36,7 +39,18 @@ func main() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
-	s := grpc.NewServer()
+	recoveryOpts := []grpc_recovery.Option{
+		grpc_recovery.WithRecoveryHandler(func(p interface{}) error {
+			stack := string(debug.Stack())
+			log.Printf("[PANIC RECOVERED] %v\nSTACK TRACE:\n%s", p, stack)
+			return fmt.Errorf("internal server error")
+		}),
+	}
+
+	s := grpc.NewServer(
+		grpc.UnaryInterceptor(grpc_recovery.UnaryServerInterceptor(recoveryOpts...)),
+		grpc.StreamInterceptor(grpc_recovery.StreamServerInterceptor(recoveryOpts...)),
+	)
 
 	mapper.RegisterMapsServer(s, &maps.RPCMap{
 		MemStore: memstore.NewMemStore(),
