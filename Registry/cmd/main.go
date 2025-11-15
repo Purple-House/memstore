@@ -1,0 +1,56 @@
+package main
+
+import (
+	"fmt"
+	"log"
+	"net"
+	"os"
+	"os/signal"
+	"syscall"
+
+	"github.com/Purple-House/memstore/registry/pkg/maps"
+	memstore "github.com/Purple-House/memstore/registry/pkg/memstore"
+	mapper "github.com/Purple-House/memstore/registry/proto"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
+)
+
+func gracefulShutdown(server *grpc.Server) {
+
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
+	<-stop
+
+	log.Println("Shutting down server...")
+
+	// Attempt graceful shutdown
+	server.Stop()
+
+}
+
+func main() {
+	fmt.Println("Registry Service for Ingress Tunnel")
+
+	lis, err := net.Listen("tcp", ":50051")
+	if err != nil {
+		log.Fatalf("failed to listen: %v", err)
+	}
+
+	s := grpc.NewServer()
+
+	mapper.RegisterMapsServer(s, &maps.RPCMap{
+		MemStore: memstore.NewMemStore(),
+	})
+	reflection.Register(s)
+
+	// Start the server
+	fmt.Println("Server is running on port 50051")
+	go func() {
+		if err := s.Serve(lis); err != nil {
+			log.Fatalf("failed to serve: %v", err)
+		}
+	}()
+
+	gracefulShutdown(s)
+
+}
