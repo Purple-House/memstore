@@ -74,4 +74,26 @@ WAL reacord encodign format
 | CRC32 (4)   |
 +-------------+
 
+[magic:2] [version:1] [op:1] [length:4] [payload:N] [crc32:4]
+
+
+Append logic
+
+┌──────────────────────────┐
+│ Append WAL (sync flush)  │
+└──────┬───────────────────┘
+       ▼
+┌──────────────────────────┐
+│ Update MemStore in RAM   │
+└──────────────────────────┘
+
+
+Replay logic
+
+Read snapshot (if exists)
+Replay WAL from beginning:
+    Decode record
+    Validate CRC
+    Apply to MemStore
+
 ```
