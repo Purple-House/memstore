@@ -2,7 +2,7 @@
 syntax = "proto3";
 package wal;
 
-option go_package = "github.com/Purple-House/memstore/registry/wal;wal";
+option go_package = "github.com/Purple-House/memstore/registry/wal/proto;wal";
 
 
 enum Operation {

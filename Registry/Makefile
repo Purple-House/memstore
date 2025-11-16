@@ -19,4 +19,7 @@ run: .env
 proto-gen:
 	protoc --go_out=. --go-grpc_out=. --go_opt=paths=source_relative --go-grpc_opt=paths=source_relative proto/maps.proto
 
-.PHONY: install-deps build run proto-gen
+wal-proto-gen:
+	protoc --go_out=. --go_opt=paths=source_relative wal/proto/wal.proto
+
+.PHONY: install-deps build run proto-gen wal-proto-gen
