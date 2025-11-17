@@ -30,7 +30,7 @@ type WALer struct {
 	writer *bufio.Writer
 }
 
-func OpenWAl() (*WALer, error) {
+func OpenWAL() (*WALer, error) {
 	f, err := os.OpenFile(walFile, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0644)
 	if err != nil {
 		return nil, err
@@ -38,6 +38,7 @@ func OpenWAl() (*WALer, error) {
 	return &WALer{
 		f:      f,
 		writer: bufio.NewWriter(f),
+		path:   walFile,
 	}, nil
 }
 

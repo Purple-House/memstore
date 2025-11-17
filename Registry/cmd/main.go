@@ -50,6 +50,12 @@ func main() {
 		}),
 	}
 
+	waler, err := wal.OpenWAL()
+	if err != nil {
+		log.Fatalf("failed to open WAL: %v", err)
+	}
+	defer waler.Close()
+
 	s := grpc.NewServer(
 		grpc.UnaryInterceptor(grpc_recovery.UnaryServerInterceptor(recoveryOpts...)),
 		grpc.StreamInterceptor(grpc_recovery.StreamServerInterceptor(recoveryOpts...)),
@@ -58,14 +64,10 @@ func main() {
 	store := memstore.NewMemStore()
 	mapper.RegisterMapsServer(s, &maps.RPCMap{
 		MemStore: store,
+		WALer:    waler,
 	})
 	reflection.Register(s)
 
-	waler, err := wal.OpenWAl()
-	if err != nil {
-		log.Fatalf("failed to open WAL: %v", err)
-	}
-	defer waler.Close()
 	_ = waler.Replay(func(wr *walpb.WalRecord) error {
 		return wal.ApplyRecord(store, wr)
 

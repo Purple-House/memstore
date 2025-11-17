@@ -5,6 +5,8 @@ import (
 
 	memstore "github.com/Purple-House/memstore/registry/pkg/memstore"
 	mapper "github.com/Purple-House/memstore/registry/proto"
+	walpb "github.com/Purple-House/memstore/registry/wal/proto"
+
 	"github.com/google/uuid"
 )
 
@@ -29,6 +31,23 @@ func (rpc *RPCMap) RegisterGateway(ctx context.Context, req *mapper.GatewayPutRe
 		region,
 		gatewayData,
 	)
+
+	// this should be zero lock write to WAL
+	err = rpc.WALer.Append(&walpb.WalRecord{
+
+		Op: walpb.Operation_OP_PUT_GATEWAY,
+		Gateway: &walpb.GatewayPutRequest{
+			GatewayDomain: gatewayData.GatewayDomain,
+			GatewayIp:     gatewayData.GatewayIP,
+			GatewayId:     gatewayData.GatewayID,
+			Capacity: &walpb.Capacity{
+				Cpu:     gatewayData.Capacity.CPU,
+				Memory:  gatewayData.Capacity.Memory,
+				Storage: gatewayData.Capacity.Storage,
+			},
+		},
+	})
+
 	if err != nil {
 		return &mapper.GatewayResponse{
 			Error: &mapper.Error{

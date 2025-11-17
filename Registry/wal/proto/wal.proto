@@ -25,6 +25,7 @@ message GatewayPutRequest {
     string gateway_domain = 3;
     int32 gateway_port = 4;
     Capacity capacity = 5;
+    string gateway_id = 6;
 }
 
 message AgentConnectionRequest {
@@ -32,6 +33,7 @@ message AgentConnectionRequest {
     string gateway_id = 2;
     string region = 3;
     string agent_domain = 4;
+    string agent_id = 5;
 }
 
 message Capacity {
