@@ -3,6 +3,7 @@ package wal
 import (
 	"bufio"
 	"encoding/binary"
+	"errors"
 	"hash/crc32"
 	"os"
 	"sync"
@@ -12,13 +13,15 @@ import (
 )
 
 const (
-	magic   uint16 = 0xCAFE
+	Magic   uint16 = 0xCAFE
 	version byte   = 1
 
 	walFile = "wal.log"
 	// walRotated  = "wal.log.1" not used yet
 	// maxWalBytes = 32 * 1024 * 1024 // 32MB
 )
+
+var ErrCorrupt = errors.New("wal corruption detected")
 
 type WALer struct {
 	mu     sync.Mutex
@@ -59,7 +62,7 @@ func (w *WALer) Append(rec *walpb.WalRecord) error {
 	crc := crc32.ChecksumIEEE(data)
 
 	header := make([]byte, 8)
-	binary.BigEndian.PutUint16(header[0:2], magic)
+	binary.BigEndian.PutUint16(header[0:2], Magic)
 	header[2] = version
 	header[3] = byte(rec.Op)
 	binary.BigEndian.PutUint32(header[4:8], uint32(len(data)))

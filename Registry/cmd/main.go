@@ -13,7 +13,10 @@ import (
 	"github.com/Purple-House/memstore/registry/pkg/maps"
 	memstore "github.com/Purple-House/memstore/registry/pkg/memstore"
 	mapper "github.com/Purple-House/memstore/registry/proto"
+	wal "github.com/Purple-House/memstore/registry/wal"
+	walpb "github.com/Purple-House/memstore/registry/wal/proto"
 	grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )
@@ -52,10 +55,21 @@ func main() {
 		grpc.StreamInterceptor(grpc_recovery.StreamServerInterceptor(recoveryOpts...)),
 	)
 
+	store := memstore.NewMemStore()
 	mapper.RegisterMapsServer(s, &maps.RPCMap{
-		MemStore: memstore.NewMemStore(),
+		MemStore: store,
 	})
 	reflection.Register(s)
+
+	waler, err := wal.OpenWAl()
+	if err != nil {
+		log.Fatalf("failed to open WAL: %v", err)
+	}
+	defer waler.Close()
+	_ = waler.Replay(func(wr *walpb.WalRecord) error {
+		return wal.ApplyRecord(store, wr)
+
+	})
 
 	// Start the server
 	fmt.Println("Server is running on port 50051")
