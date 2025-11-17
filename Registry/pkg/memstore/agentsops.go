@@ -5,8 +5,8 @@ import "fmt"
 func (mem *MemStore) AddAgent(region string, agent *AgentData) (*AgentData, *GatewayData, error) {
 	data := mem.RegionExist(region)
 
-	data.mu.Lock()
-	defer data.mu.Unlock()
+	data.Mu.Lock()
+	defer data.Mu.Unlock()
 
 	gateway, exist := mem.GetGateway(region, agent.GatewayDomain)
 	if !exist {

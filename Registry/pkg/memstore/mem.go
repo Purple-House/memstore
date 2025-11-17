@@ -23,7 +23,7 @@ type MemData struct {
 	Gateways map[string]*GatewayData
 	Agents   map[string]*AgentData
 	ranked   *btree.BTree
-	mu       sync.RWMutex
+	Mu       sync.RWMutex
 }
 
 type AgentData struct {

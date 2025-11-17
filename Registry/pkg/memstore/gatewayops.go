@@ -5,8 +5,8 @@ import "github.com/google/btree"
 func (mem *MemStore) AddGateway(region string, gateway *GatewayData) (GatewayData, error) {
 	data := mem.RegionExist(region)
 
-	data.mu.Lock()
-	defer data.mu.Unlock()
+	data.Mu.Lock()
+	defer data.Mu.Unlock()
 
 	gatewayData, exist := data.Gateways[gateway.GatewayDomain]
 	if exist {
@@ -31,8 +31,8 @@ func (mem *MemStore) AddGateway(region string, gateway *GatewayData) (GatewayDat
 func (mem *MemStore) GetTopKGateways(region string, k int) []*GatewayData {
 	data := mem.RegionExist(region)
 
-	data.mu.RLock()
-	defer data.mu.RUnlock()
+	data.Mu.RLock()
+	defer data.Mu.RUnlock()
 
 	var result []*GatewayData
 	count := 0
@@ -51,8 +51,8 @@ func (mem *MemStore) GetTopKGateways(region string, k int) []*GatewayData {
 func (mem *MemStore) GetGateway(region, gatewayDomain string) (*GatewayData, bool) {
 	data := mem.RegionExist(region)
 
-	data.mu.RLock()
-	defer data.mu.RUnlock()
+	data.Mu.RLock()
+	defer data.Mu.RUnlock()
 	gateway, exist := data.Gateways[gatewayDomain]
 	return gateway, exist
 }
