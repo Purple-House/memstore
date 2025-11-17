@@ -97,9 +97,8 @@ func ApplyRecord(store *memstore.MemStore, rec *walpb.WalRecord) error {
 	case walpb.Operation_OP_PUT_AGENT:
 		region := rec.Agent.Region
 		agentData := &memstore.AgentData{
-			AgentID:     uuid.NewString(),
-			AgentDomain: rec.Agent.AgentDomain,
-
+			AgentID:       uuid.NewString(),
+			AgentDomain:   rec.Agent.AgentDomain,
 			GatewayDomain: rec.Agent.Domain,
 			GatewayID:     rec.Agent.GatewayId,
 		}
