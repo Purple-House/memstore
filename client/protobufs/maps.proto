@@ -1,0 +1,83 @@
+syntax = "proto3";
+
+
+package maps;
+
+option go_package = "github.com/Purple-House/memstore/registry/client/protobufs/maps";
+
+
+// protoc --go_out=. --go-grpc_out=../. --go_opt=paths=source_relative --go-grpc_opt=paths=source_relative proto/maps/maps.proto
+service Maps {
+    rpc RegisterGateway (GatewayPutRequest) returns  (GatewayResponse);
+    rpc RegisterAgent (AgentConnectionRequest) returns (AgentResponse);
+    rpc ResolveGatewayForAgent (GatewayHandshake) returns (MultipleGateways);
+    rpc ResolveGatewayForProxy (GatewayProxy) returns (GatewayResponse);
+}
+
+
+enum ErrorCode {
+    ERROR_CODE_UNSPECIFIED = 0;
+    ERROR_CODE_INVALID_ARGUMENT = 1; 
+    ERROR_CODE_NOT_FOUND = 2;
+    ERROR_CODE_ALREADY_EXISTS = 3;
+    ERROR_CODE_UNAVAILABLE = 4;
+    ERROR_CODE_INTERNAL = 5;
+    ERROR_CODE_UNAUTHORIZED = 6;
+}
+
+message Error {
+    ErrorCode code = 1;
+    string message = 2;
+}
+
+message GatewayPutRequest {
+    string region = 1;
+    string gateway_ip = 2;
+    string gateway_domain = 3;
+    int32 gateway_port = 4;
+    Capacity capacity = 5;
+}
+
+message Capacity {
+    int32 cpu = 1;
+    int32 memory = 2;
+    int32 storage = 3;
+    int32 bandwidth = 4;
+}
+
+message GatewayResponse {
+    string gateway_id = 1;
+    string gateway_ip = 2;
+    string gateway_domain = 3;
+    Error error = 4;
+}
+
+message AgentConnectionRequest {
+    string domain = 1 ;
+    string gateway_id = 2;
+    string region = 3;
+    string agent_domain = 4;
+}
+
+message AgentResponse {
+    string agent_id = 1;
+    string agent_domain =2;
+    string gateway_id=3;
+    string gateway_domain = 4;
+    Capacity capacity = 5;
+    Error error = 6;
+}
+
+message GatewayHandshake {
+    string region = 1;
+}
+
+message MultipleGateways {
+    repeated GatewayResponse gateways = 1;
+    Error error = 2;
+}
+
+message GatewayProxy {
+    string agent_domain = 1;
+    string region = 2;
+}
