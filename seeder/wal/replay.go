@@ -122,6 +122,13 @@ func ApplyRecord(store *memstore.MemStore, rec *walpb.WalRecord) error {
 			return err
 		}
 		return nil
+
+	case walpb.Operation(3):
+		if rec.Agent == nil {
+			return fmt.Errorf("delete agent record missing agent payload")
+		}
+		store.DeleteAgent(rec.Agent.Region, rec.Agent.AgentDomain)
+		return nil
 	}
 
 	return fmt.Errorf("unknown op: %v", rec.Op)

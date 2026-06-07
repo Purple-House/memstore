@@ -85,25 +85,12 @@ func (w *WALer) Append(rec *walpb.WalRecord) error {
 	return w.writer.Flush()
 }
 
-// AppendDeleteAgent writes an OP_DELETE_AGENT record to the WAL.
-//
-// STATUS: stub — requires the following agni-schema additions before activating:
-//
-//  1. walpb.Operation enum:  OP_DELETE_AGENT = 3
-//  2. New message:           WalAgentDeleteRecord { string agent_domain = 1; string region = 2; }
-//  3. WalRecord oneof:       WalAgentDeleteRecord delete_agent = 4;
-//  4. replay.go case:        walpb.Operation_OP_DELETE_AGENT → store.DeleteAgent(rec.DeleteAgent.Region, rec.DeleteAgent.AgentDomain)
-//
-// Once the schema is updated, replace this body with:
-//
-//	return w.Append(&walpb.WalRecord{
-//	    Op: walpb.Operation_OP_DELETE_AGENT,
-//	    DeleteAgent: &walpb.WalAgentDeleteRecord{
-//	        AgentDomain: agentDomain,
-//	        Region:      region,
-//	    },
-//	})
 func (w *WALer) AppendDeleteAgent(region, agentDomain string) error {
-	// TODO: implement after agni-schema update (see above).
-	return nil
+	return w.Append(&walpb.WalRecord{
+		Op: walpb.Operation(3),
+		Agent: &walpb.AgentConnectionRequest{
+			Region:      region,
+			AgentDomain: agentDomain,
+		},
+	})
 }
