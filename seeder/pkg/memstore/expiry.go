@@ -53,9 +53,6 @@ func (mem *MemStore) SetTTL(ttl time.Duration) {
 	mem.agentTTL = ttl
 }
 
-// pushExpiry enqueues an expiry event for the given agent.
-// It is always safe to call: if TTL is not set nothing is enqueued.
-// Must NOT be called while holding data.Mu to avoid lock-order inversion.
 func (mem *MemStore) pushExpiry(agentDomain, region string, expiresAt time.Time) {
 	if mem.agentTTL == 0 {
 		return
@@ -75,15 +72,6 @@ func (mem *MemStore) pushExpiry(agentDomain, region string, expiresAt time.Time)
 	}
 }
 
-// StartExpiryWorker launches the background TTL eviction goroutine.
-//
-// Design: the goroutine arms a time.Timer for the next-due entry (min-heap top)
-// and sleeps until it fires. No fixed-interval polling — wakeups are O(1) and
-// proportional to the number of actual expirations, not the number of agents.
-//
-// Lazy-deletion: a popped heap entry is valid only if the agent's LastSeenAt
-// confirms it has not re-registered since the entry was pushed. Stale entries
-// (from re-registrations) are discarded without any deletion.
 func (mem *MemStore) StartExpiryWorker(ctx context.Context, waler WALDeleter) {
 	go func() {
 		var timer *time.Timer
@@ -134,9 +122,6 @@ func (mem *MemStore) StartExpiryWorker(ctx context.Context, waler WALDeleter) {
 	}()
 }
 
-// processExpired pops all due entries from the heap and evicts truly stale agents.
-// Lazy-deletion: if an agent re-registered since its heap entry was pushed,
-// its LastSeenAt will be within the TTL window and the entry is silently dropped.
 func (mem *MemStore) processExpired(waler WALDeleter) {
 	now := time.Now()
 	for {
