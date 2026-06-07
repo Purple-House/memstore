@@ -1,6 +1,7 @@
 package memstore
 
 import (
+	"container/heap"
 	"sync"
 
 	"github.com/google/btree"
@@ -19,9 +20,13 @@ func GetMemStore() *MemStore {
 }
 
 func NewMemStore() *MemStore {
+	h := &agentExpiryHeap{}
+	heap.Init(h)
 	return &MemStore{
-		regions: make(map[string]*MemData),
-		global:  newMemData(),
+		regions:     make(map[string]*MemData),
+		global:      newMemData(),
+		expiryHeap:  h,
+		expiryReset: make(chan struct{}, 1),
 	}
 }
 
