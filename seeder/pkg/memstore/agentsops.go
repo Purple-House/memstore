@@ -2,9 +2,11 @@ package memstore
 
 import (
 	"fmt"
+	"time"
 )
 
 func (mem *MemStore) AddAgent(region string, agent *AgentData) (*AgentData, *GatewayData, error) {
+	now := time.Now()
 
 	gateway, exist := mem.GetGateway(region, agent.GatewayID)
 	if !exist {
@@ -14,27 +16,43 @@ func (mem *MemStore) AddAgent(region string, agent *AgentData) (*AgentData, *Gat
 	data := mem.RegionExist(region)
 
 	data.Mu.Lock()
-	defer data.Mu.Unlock()
 
-	_, exist = data.Agents[agent.AgentDomain]
+	existing, exist := data.Agents[agent.AgentDomain]
 	if exist {
-		fmt.Printf("Agent %s already exists in region %s\n", agent.AgentDomain, region)
-		agent_data := data.Agents[agent.AgentDomain]
-		agent_data.GatewayID = gateway.GatewayID
-		agent_data.GatewayIP = gateway.GatewayIP
-		agent_data.GatewayAddress = gateway.GatewayAddress
-		return agent_data, gateway, nil
+		fmt.Printf("Agent %s already exists in region %s — refreshing TTL\n", agent.AgentDomain, region)
+		existing.GatewayID = gateway.GatewayID
+		existing.GatewayIP = gateway.GatewayIP
+		existing.GatewayAddress = gateway.GatewayAddress
+		existing.LastSeenAt = now.Unix()
+		data.Mu.Unlock()
+		// pushExpiry must be called after releasing data.Mu to avoid lock-order inversion
+		// (expiry worker: expiryMu → data.Mu; write path must be: data.Mu → released → expiryMu).
+		mem.pushExpiry(agent.AgentDomain, region, now.Add(mem.agentTTL))
+		return existing, gateway, nil
 	}
 
 	agent.GatewayIP = gateway.GatewayIP
 	agent.GatewayAddress = gateway.GatewayAddress
 	agent.GatewayPort = gateway.GatewayPort
 	agent.Wssport = gateway.Wssport
+	agent.LastSeenAt = now.Unix()
 
 	data.Agents[agent.AgentDomain] = agent
+	data.Mu.Unlock()
+
+	mem.pushExpiry(agent.AgentDomain, region, now.Add(mem.agentTTL))
 
 	fmt.Println("Added the agent to gateway", agent.AgentID, agent.GatewayID)
 	return agent, gateway, nil
+}
+
+// DeleteAgent removes an agent record from the given region.
+// It is safe to call if the agent has already been removed.
+func (mem *MemStore) DeleteAgent(region, agentDomain string) {
+	data := mem.RegionExist(region)
+	data.Mu.Lock()
+	delete(data.Agents, agentDomain)
+	data.Mu.Unlock()
 }
 
 func (mem *MemStore) GetAgent(agentDomain, region string) (*AgentData, bool) {

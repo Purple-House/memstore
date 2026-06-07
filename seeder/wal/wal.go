@@ -84,3 +84,13 @@ func (w *WALer) Append(rec *walpb.WalRecord) error {
 
 	return w.writer.Flush()
 }
+
+func (w *WALer) AppendDeleteAgent(region, agentDomain string) error {
+	return w.Append(&walpb.WalRecord{
+		Op: walpb.Operation(3),
+		Agent: &walpb.AgentConnectionRequest{
+			Region:      region,
+			AgentDomain: agentDomain,
+		},
+	})
+}

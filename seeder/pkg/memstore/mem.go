@@ -2,6 +2,7 @@ package memstore
 
 import (
 	"sync"
+	"time"
 
 	"github.com/google/btree"
 )
@@ -14,9 +15,13 @@ const (
 )
 
 type MemStore struct {
-	mu      sync.RWMutex
-	regions map[string]*MemData
-	global  *MemData
+	mu          sync.RWMutex
+	regions     map[string]*MemData
+	global      *MemData
+	expiryHeap  *agentExpiryHeap
+	expiryMu    sync.Mutex
+	expiryReset chan struct{}
+	agentTTL    time.Duration
 }
 
 type MemData struct {
@@ -36,6 +41,7 @@ type AgentData struct {
 	Wssport        int32
 	GatewayAddress string
 	VerifiableHash string
+	LastSeenAt     int64 // Unix timestamp; updated on every RegisterAgent call
 }
 type SeederData struct {
 	SeederID       string

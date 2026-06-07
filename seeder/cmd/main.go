@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"crypto/sha256"
 	"crypto/tls"
 	"crypto/x509"
@@ -193,8 +194,12 @@ func main() {
 
 	_ = waler.Replay(func(wr *walpb.WalRecord) error {
 		return wal.ApplyRecord(store, wr)
-
 	})
+
+	expiryCtx, cancelExpiry := context.WithCancel(context.Background())
+	defer cancelExpiry()
+	store.SetTTL(48 * time.Hour)
+	store.StartExpiryWorker(expiryCtx, waler)
 
 	apis := api.NewApi(store)
 	router := mux.NewRouter()
